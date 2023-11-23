@@ -18,6 +18,7 @@ function app() {
   // https://gist.github.com/ZiKT1229/5935a10ce818ea7b851ea85ecf55b4da
 
   let score = 0;
+  let highscore = 0;
 
   let snake = {
     x: 16,
@@ -72,6 +73,7 @@ function app() {
         snake.maxCells++;
 
         score++;
+        if (score > highscore) highscore++;
   
         // canvas is 400x400 which is 25x25 grids
         apple.x = getRandomInt(0, GAME_DIMENSION.x);
@@ -83,6 +85,9 @@ function app() {
         
         // snake occupies same space as a body part. reset game
         if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+          saveHighscore();
+          score = 0;
+
           snake.x = 16;
           snake.y = 16;
           snake.cells = [];
@@ -104,18 +109,35 @@ function app() {
     });
   }
 
-  // People code's end here  
+  // People's codes end here
+
+  const loadHighscore = () => {
+    highscore = Number(localStorage.getItem('snake::highscore') ?? '0');
+  }
+
+  const saveHighscore = () => {
+    localStorage.setItem('snake::highscore', highscore.toString());
+  }
+
+  const renderNumber = (game: Game, pos: Point, num: number) => {
+    let numArr = num.toString().padStart(4, '0').split('').map((v) => parseInt(v));
+    numArr.forEach((num, a) => {
+      game.DrawDMap(cast(DRAWMAP.numbers[num]), { x: pos.x + (a * 4) , y: pos.y });
+    });
+  }
 
   Game.Instance = new Game();
   window.__3310F_GAME = Game.Instance;
 
+  Game.Instance.Initialize = () => {
+    loadHighscore();
+  }
+
   Game.Instance.Renderer = (game: Game) => {
     renderSnake(game);
 
-    let scoreArray = score.toString().padStart(4, '0').split('').map((v) => parseInt(v));
-    scoreArray.forEach((num, a) => {
-      game.DrawDMap(cast(DRAWMAP.numbers[num]), { x: 68 + (a * 4) , y: 1 });
-    });
+    renderNumber(game, { x: 68, y: 1 }, score);
+    renderNumber(game, { x: 1, y: 1 }, highscore);
 
     for(let i = 0; i < GAME_DIMENSION.x; i++) {
       game.DrawPixel({ x: i, y: 7 }, COLOR.Dark);
@@ -123,28 +145,29 @@ function app() {
   }
 
   let snakeUpdateSlowRate = 0;
+  let inputQueue: string[] = [];
   Game.Instance.Update = (game: Game) => {
+    const lastInputQueue = inputQueue[inputQueue.length - 1];
+    if (game.input.IsPressed('UP') && snake.dy !== 1) {
+      if (snake.dy === 1) return;
+      snake.dy = -1;
+      snake.dx = 0;
+    }
+    else if (game.input.IsPressed('DOWN') && snake.dy !== -1) {
+      if (snake.dy === -1) return;
+      snake.dy = 1;
+      snake.dx = 0;
+    }
+    else if (game.input.IsPressed('LEFT') && snake.dx !== 1) {
+      snake.dx = -1;
+      snake.dy = 0;
+    }
+    else if (game.input.IsPressed('RIGHT') && snake.dx !== -1) {
+      snake.dx = 1;
+      snake.dy = 0;
+    }
+
     if (++snakeUpdateSlowRate > 12) {
-
-      if (game.input.IsPressed('UP') && snake.dy !== 1) {
-        if (snake.dy === 1) return;
-        snake.dy = -1;
-        snake.dx = 0;
-      }
-      else if (game.input.IsPressed('DOWN') && snake.dy !== -1) {
-        if (snake.dy === -1) return;
-        snake.dy = 1;
-        snake.dx = 0;
-      }
-      else if (game.input.IsPressed('LEFT') && snake.dx !== 1) {
-        snake.dx = -1;
-        snake.dy = 0;
-      }
-      else if (game.input.IsPressed('RIGHT') && snake.dx !== -1) {
-        snake.dx = 1;
-        snake.dy = 0;
-      }
-
       updateSnake();
       snakeUpdateSlowRate = 0;
     }
