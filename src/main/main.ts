@@ -1,4 +1,6 @@
+import { Point } from '../types';
 import Game from './libs/game';
+import { COLOR, GAME_DIMENSION } from './libs/utils';
 import './style.css';
 
 declare global {
@@ -7,16 +9,125 @@ declare global {
   }
 }
 
+function getRandomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
 function app() {
+  // I cheated
+  // https://gist.github.com/ZiKT1229/5935a10ce818ea7b851ea85ecf55b4da
+
+  const grid = 16;
+
+  let snake = {
+    x: 16,
+    y: 16,
+    
+    // snake velocity. moves one grid length every frame in either the x or y direction
+    dx: 1,
+    dy: 0,
+    
+    // keep track of all grids the snake body occupies
+    cells: [] as Point[],
+    
+    // length of the snake. grows when eating an apple
+    maxCells: 4
+  };
+
+  let apple = {
+    x: 32,
+    y: 32
+  };
+
+  const updateSnake = () => {
+    snake.x += snake.dx;
+    snake.y += snake.dy;
+
+    if (snake.x < 0) {
+      snake.x = GAME_DIMENSION.x;
+    }
+    else if (snake.x >= GAME_DIMENSION.x) {
+      snake.x = 0;
+    }
+
+    snake.cells.unshift({
+      x: snake.x,
+      y: snake.y
+    });
+
+    if (snake.cells.length > snake.maxCells) {
+      snake.cells.pop();
+    }
+
+    snake.cells.forEach(function(cell, index) {
+      // snake ate apple
+      if (cell.x === apple.x && cell.y === apple.y) {
+        snake.maxCells++;
+  
+        // canvas is 400x400 which is 25x25 grids
+        apple.x = getRandomInt(0, GAME_DIMENSION.x);
+        apple.y = getRandomInt(0, GAME_DIMENSION.y);
+      }
+  
+      // check collision with all cells after this one (modified bubble sort)
+      for (var i = index + 1; i < snake.cells.length; i++) {
+        
+        // snake occupies same space as a body part. reset game
+        if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+          snake.x = 16;
+          snake.y = 16;
+          snake.cells = [];
+          snake.maxCells = 4;
+          snake.dx = 1;
+          snake.dy = 0;
+  
+          apple.x = getRandomInt(0, GAME_DIMENSION.x);
+          apple.y = getRandomInt(0, GAME_DIMENSION.y);
+        }
+      }
+    });
+  }
+
+  const renderSnake = (game: Game) => {
+    game.DrawPixel({ x: apple.x, y: apple.y }, COLOR.Dark);
+    snake.cells.forEach(function(cell, index) {
+      game.DrawPixel({ x: cell.x, y: cell.y }, COLOR.Dark);
+    });
+  }
+
+  // People code's end here  
+
   Game.Instance = new Game();
   window.__3310F_GAME = Game.Instance;
 
   Game.Instance.Renderer = (game: Game) => {
-
+    renderSnake(game);
   }
 
+  let snakeUpdateSlowRate = 0;
   Game.Instance.Update = (game: Game) => {
-    
+    if (++snakeUpdateSlowRate > 12) {
+
+      if (game.input.IsPressed('UP')) {
+        snake.dy = -1;
+        snake.dx = 0;
+      }
+      if (game.input.IsPressed('DOWN')) {
+        snake.dy = 1;
+        snake.dx = 0;
+      }
+      if (game.input.IsPressed('LEFT')) {
+        snake.dx = -1;
+        snake.dy = 0;
+      }
+      if (game.input.IsPressed('RIGHT')) {
+        snake.dx = 1;
+        snake.dy = 0;
+      }
+
+      updateSnake();
+      snakeUpdateSlowRate = 0;
+    }
   }
 
   Game.Instance.Init();
