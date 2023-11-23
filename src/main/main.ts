@@ -1,6 +1,6 @@
 import { Point } from '../types';
 import Game from './libs/game';
-import { COLOR, GAME_DIMENSION } from './libs/utils';
+import { COLOR, DRAWMAP, GAME_DIMENSION, cast } from './libs/utils';
 import './style.css';
 
 declare global {
@@ -17,7 +17,7 @@ function app() {
   // I cheated
   // https://gist.github.com/ZiKT1229/5935a10ce818ea7b851ea85ecf55b4da
 
-  const grid = 16;
+  let score = 0;
 
   let snake = {
     x: 16,
@@ -50,6 +50,13 @@ function app() {
       snake.x = 0;
     }
 
+    if (snake.y < 8) {
+      snake.y = GAME_DIMENSION.y;
+    }
+    else if (snake.y >= GAME_DIMENSION.y) {
+      snake.y = 8;
+    }
+
     snake.cells.unshift({
       x: snake.x,
       y: snake.y
@@ -63,10 +70,12 @@ function app() {
       // snake ate apple
       if (cell.x === apple.x && cell.y === apple.y) {
         snake.maxCells++;
+
+        score++;
   
         // canvas is 400x400 which is 25x25 grids
         apple.x = getRandomInt(0, GAME_DIMENSION.x);
-        apple.y = getRandomInt(0, GAME_DIMENSION.y);
+        apple.y = getRandomInt(8, GAME_DIMENSION.y);
       }
   
       // check collision with all cells after this one (modified bubble sort)
@@ -82,7 +91,7 @@ function app() {
           snake.dy = 0;
   
           apple.x = getRandomInt(0, GAME_DIMENSION.x);
-          apple.y = getRandomInt(0, GAME_DIMENSION.y);
+          apple.y = getRandomInt(8, GAME_DIMENSION.y);
         }
       }
     });
@@ -90,7 +99,7 @@ function app() {
 
   const renderSnake = (game: Game) => {
     game.DrawPixel({ x: apple.x, y: apple.y }, COLOR.Dark);
-    snake.cells.forEach(function(cell, index) {
+    snake.cells.forEach(cell => {
       game.DrawPixel({ x: cell.x, y: cell.y }, COLOR.Dark);
     });
   }
@@ -102,25 +111,36 @@ function app() {
 
   Game.Instance.Renderer = (game: Game) => {
     renderSnake(game);
+
+    let scoreArray = score.toString().padStart(4, '0').split('').map((v) => parseInt(v));
+    scoreArray.forEach((num, a) => {
+      game.DrawDMap(cast(DRAWMAP.numbers[num]), { x: 68 + (a * 4) , y: 1 });
+    });
+
+    for(let i = 0; i < GAME_DIMENSION.x; i++) {
+      game.DrawPixel({ x: i, y: 7 }, COLOR.Dark);
+    }
   }
 
   let snakeUpdateSlowRate = 0;
   Game.Instance.Update = (game: Game) => {
     if (++snakeUpdateSlowRate > 12) {
 
-      if (game.input.IsPressed('UP')) {
+      if (game.input.IsPressed('UP') && snake.dy !== 1) {
+        if (snake.dy === 1) return;
         snake.dy = -1;
         snake.dx = 0;
       }
-      if (game.input.IsPressed('DOWN')) {
+      else if (game.input.IsPressed('DOWN') && snake.dy !== -1) {
+        if (snake.dy === -1) return;
         snake.dy = 1;
         snake.dx = 0;
       }
-      if (game.input.IsPressed('LEFT')) {
+      else if (game.input.IsPressed('LEFT') && snake.dx !== 1) {
         snake.dx = -1;
         snake.dy = 0;
       }
-      if (game.input.IsPressed('RIGHT')) {
+      else if (game.input.IsPressed('RIGHT') && snake.dx !== -1) {
         snake.dx = 1;
         snake.dy = 0;
       }
