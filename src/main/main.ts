@@ -136,6 +136,8 @@ function app() {
 
   Game.Instance.Initialize = () => {
     loadHighscore();
+    
+    Game.Instance.input.RegisterKey('I', 'i');
   }
 
   Game.Instance.Renderer = (game: Game) => {
@@ -192,6 +194,10 @@ function app() {
       }
       updateSnake();
       snakeUpdateSlowRate = 0;
+    }
+
+    if (game.input.IsPressedOnce('I')) {
+      game.invert = !game.invert;
     }
   }
 

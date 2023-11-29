@@ -2,6 +2,7 @@ import { KeyEventHandler } from "../../types";
 
 type KeyHandleState = {
   registeredKey: string,
+  justPressed: boolean,
   pressed: boolean
 }
 
@@ -9,22 +10,27 @@ class KeyHandler {
   public state: { [key: string]: KeyHandleState } = {
     UP: {
       registeredKey: 'ArrowUp',
+      justPressed: false,
       pressed: false
     },
     DOWN: {
       registeredKey: 'ArrowDown',
+      justPressed: false,
       pressed: false
     },
     LEFT: {
       registeredKey: 'ArrowLeft',
+      justPressed: false,
       pressed: false
     },
     RIGHT: {
       registeredKey: 'ArrowRight',
+      justPressed: false,
       pressed: false
     },
     ESCAPE: {
       registeredKey: 'Escape',
+      justPressed: false,
       pressed: false
     }
   };
@@ -55,6 +61,24 @@ class KeyHandler {
     }
   }
 
+  IsPressedOnce(keyStateName: string) {
+    const keyName = keyStateName.toUpperCase();
+    if (this.state.hasOwnProperty(keyName)) {
+      const keyState = this.state[keyName];
+      if (keyState.pressed && !keyState.justPressed) {
+        keyState.justPressed = true;
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    else {
+      console.error(`"${keyStateName}" is undefined in keyState.`);
+      return false;
+    }
+  }
+
   KeyDownHandle(event: KeyboardEvent) {
     for (let key in this.state) {
       if (this.state[key].registeredKey == event.key) {
@@ -67,6 +91,7 @@ class KeyHandler {
     for (let key in this.state) {
       if (this.state[key].registeredKey == event.key) {
         this.state[key].pressed = false;
+        this.state[key].justPressed = false;
       }
     }
   }
@@ -81,6 +106,7 @@ class KeyHandler {
       Object.assign(this.state, {
         [keyName]: {
           registeredKey: keyCode,
+          justPressed: false,
           pressed: false
         }
       });
