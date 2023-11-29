@@ -20,6 +20,9 @@ function app() {
   let score = 0;
   let highscore = 0;
 
+  let snakeUpdateSlowRate = 0;
+  let inputQueue: string[] = ['RIGHT'];
+
   let snake = {
     x: 16,
     y: 16,
@@ -97,6 +100,8 @@ function app() {
   
           apple.x = getRandomInt(0, GAME_DIMENSION.x);
           apple.y = getRandomInt(8, GAME_DIMENSION.y);
+
+          inputQueue = ['RIGHT'];
         }
       }
     });
@@ -144,30 +149,47 @@ function app() {
     }
   }
 
-  let snakeUpdateSlowRate = 0;
-  let inputQueue: string[] = [];
   Game.Instance.Update = (game: Game) => {
     const lastInputQueue = inputQueue[inputQueue.length - 1];
-    if (game.input.IsPressed('UP') && snake.dy !== 1) {
-      if (snake.dy === 1) return;
-      snake.dy = -1;
-      snake.dx = 0;
+    if (game.input.IsPressed('UP')) {
+      if (!['UP', 'DOWN'].includes(lastInputQueue)) inputQueue.push('UP');
     }
-    else if (game.input.IsPressed('DOWN') && snake.dy !== -1) {
-      if (snake.dy === -1) return;
-      snake.dy = 1;
-      snake.dx = 0;
+    else if (game.input.IsPressed('DOWN')) {
+      if (!['UP', 'DOWN'].includes(lastInputQueue)) inputQueue.push('DOWN');
     }
-    else if (game.input.IsPressed('LEFT') && snake.dx !== 1) {
-      snake.dx = -1;
-      snake.dy = 0;
+    else if (game.input.IsPressed('LEFT')) {
+      if (!['LEFT', 'RIGHT'].includes(lastInputQueue)) inputQueue.push('LEFT');
     }
-    else if (game.input.IsPressed('RIGHT') && snake.dx !== -1) {
-      snake.dx = 1;
-      snake.dy = 0;
+    else if (game.input.IsPressed('RIGHT')) {
+      if (!['LEFT', 'RIGHT'].includes(lastInputQueue)) inputQueue.push('RIGHT');
     }
 
     if (++snakeUpdateSlowRate > 12) {
+      const enquedKey = inputQueue.shift();
+      if (enquedKey === 'UP') {
+        if (snake.dy === 0) {
+          snake.dy = -1;
+          snake.dx = 0;
+        }
+      }
+      else if (enquedKey === 'DOWN') {
+        if (snake.dy === 0) {
+          snake.dy = 1;
+          snake.dx = 0;
+        }
+      }
+      else if (enquedKey === 'LEFT') {
+        if (snake.dx === 0) {
+          snake.dx = -1;
+          snake.dy = 0;
+        }
+      }
+      else if (enquedKey === 'RIGHT') {
+        if (snake.dx === 0) {
+          snake.dx = 1;
+          snake.dy = 0;
+        }
+      }
       updateSnake();
       snakeUpdateSlowRate = 0;
     }
